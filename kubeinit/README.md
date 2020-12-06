@@ -55,7 +55,7 @@ KubeInit's documentation is hosted in [this same repository](https://docs.kubein
 # Requirements
 
 * A fresh deployed server with enough RAM and disk space (120GB in RAM and 300GB in disk) and CentOS 8 (it should work also in Fedora/Debian/Ubuntu hosts).
-* We assume that the hypervisor node is called nyctea (defined in the inventory).
+* We assume that the hypervisor node is called server009.tlh.local (defined in the inventory).
 * Have root passwordless access with certificates.
 * Adjust the inventory file to suit your needs i.e. [the worker nodes](https://github.com/Kubeinit/kubeinit/blob/master/kubeinit/hosts/okd/inventory#L66)
  you will need in your cluster.

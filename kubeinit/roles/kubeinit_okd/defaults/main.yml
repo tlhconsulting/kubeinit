@@ -25,8 +25,10 @@ kubeinit_okd_pod_cidr: 10.100.0.0/14
 kubeinit_okd_service_cidr: 172.30.0.0/16
 
 kubeinit_okd_dependencies:
-  client: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-client-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz
-  installer: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-install-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz
+  #client: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-client-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz
+  #installer: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-install-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz
+  client: https://github.com/openshift/okd/releases/download/4.6.0-0.okd-2020-11-27-200126/openshift-client-linux-4.6.0-0.okd-2020-11-27-200126.tar.gz
+  installer: https://github.com/openshift/okd/releases/download/4.6.0-0.okd-2020-11-27-200126/openshift-install-linux-4.6.0-0.okd-2020-11-27-200126.tar.gz
 kubeinit_okd_service_dependencies:
   - haproxy
   - httpd

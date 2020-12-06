@@ -101,7 +101,11 @@ okd-worker-01 ansible_host=192.168.5.6 mac=52:54:00:10:64:16
 okd-worker-02 ansible_host=192.168.5.7 mac=52:54:00:33:75:35
 okd-worker-03 ansible_host=192.168.5.8 mac=52:54:00:51:64:75
 okd-worker-04 ansible_host=192.168.5.9 mac=52:54:00:58:69:54
+<<<<<<< HEAD
 #okd-worker-05 ansible_host=192.168.5.10 mac=52:54:00:95:95:18
+=======
+# okd-worker-05 ansible_host=192.168.5.10 mac=52:54:00:95:95:18
+>>>>>>> 245fd5171bc44fe4aed7d535132fdaf4b470049c
 # okd-worker-06 ansible_host=192.168.5.11 mac=52:54:00:21:20:36
 # okd-worker-07 ansible_host=192.168.5.12 mac=52:54:00:25:72:66
 # okd-worker-08 ansible_host=192.168.5.13 mac=52:54:00:44:47:31

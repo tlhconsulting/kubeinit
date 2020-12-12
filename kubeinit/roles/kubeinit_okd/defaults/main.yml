@@ -24,8 +24,6 @@ kubeinit_okd_hide_sensitive_logs: true
 kubeinit_okd_pod_cidr: 10.100.0.0/14
 kubeinit_okd_service_cidr: 172.30.0.0/16
 
-<<<<<<< HEAD
-=======
 kubeinit_okd_registry: quay.io
 kubeinit_okd_registry_organization: openshift
 kubeinit_okd_registry_repository: okd
@@ -40,7 +38,6 @@ kubeinit_okd_registry_release_tag: 4.6.0-0.okd-2020-11-27-200126.tar.gz
 # using Python's str(), which is why we end up with the single-quoted values.
 kubeinit_okd_registry_pullsecret: '  {"auths":{"fakeregistry:5000":{"auth": "foo", "email": "bar"}}}'
 
->>>>>>> 245fd5171bc44fe4aed7d535132fdaf4b470049c
 kubeinit_okd_dependencies:
   #client: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-client-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz
   #installer: https://github.com/openshift/okd/releases/download/4.5.0-0.okd-2020-10-03-012432/openshift-install-linux-4.5.0-0.okd-2020-10-03-012432.tar.gz

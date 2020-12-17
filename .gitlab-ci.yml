@@ -1,8 +1,0 @@
-image: fedora
-job:on-schedule:
-  # only:
-  #   - schedules
-  tags:
-    - kubeinit-ci-bot
-  script:
-    - python3 ./ci/launch_e2e.py

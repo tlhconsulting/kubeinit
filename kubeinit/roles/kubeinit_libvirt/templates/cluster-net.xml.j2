@@ -1,0 +1,30 @@
+<network>
+  <name>{{ item.name }}</name>
+  <forward mode='nat'>
+  <nat>
+    <port start='1024' end='65535'/>
+  </nat>
+  </forward>
+  <bridge name='{{ item.bridge }}' stp='on' delay='0'/>
+  <ip address='{{ item.gateway }}' netmask='{{ item.netmask }}'>
+      <dhcp>
+          <range start='{{ item.start }}' end='{{ item.end }}'/>
+          {% if item.main %}
+          {% for host in groups['all'] | map('regex_search','^((?!hypervisor).)*$') | select('string') | list %}
+          <host mac="{{ hostvars[host].mac }}" name="{{ host }}.{{ kubeinit_inventory_cluster_domain }}" ip="{{ hostvars[host].ansible_host }}"/>
+          {% endfor %}
+          {% endif %}
+      </dhcp>
+  </ip>
+  <dns>
+{% if kubeinit_libvirt_dns_forward_multicluster_enabled %}
+  {% for inv in kubeinit_libvirt_dns_forward_multicluster_inventory_files %}
+  <forwarder domain="{{ lookup('ini', 'kubeinit_inventory_cluster_name section=all:vars file='+inv) }}.{{ lookup('ini', 'kubeinit_inventory_cluster_domain section=all:vars file='+inv) }}" addr="{{ lookup('ini', 'kubeinit_inventory_cluster_dns_server section=all:vars file='+inv) }}"/>
+  {% endfor %}
+{% else %}
+  {% for host in groups['all'] | map('regex_search','^.*(service).*$') | select('string') | list %}
+  <forwarder domain='{{kubeinit_inventory_cluster_name}}.{{ kubeinit_inventory_cluster_domain }}' addr="{{ hostvars[host].ansible_host }}"/>
+  {% endfor %}
+{% endif%}
+  </dns>
+</network>

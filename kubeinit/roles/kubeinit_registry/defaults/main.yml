@@ -1,0 +1,63 @@
+---
+# Copyright 2020 KubeInit.
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+
+# All variables intended for modification should be placed in this file.
+
+# All variables within this role should have a prefix of "kubeinit_registry_"
+kubeinit_registry_debug: "{{ (ansible_verbosity | int) >= 2 | bool }}"
+kubeinit_registry_hide_sensitive_logs: true
+
+kubeinit_registry_enabled: true
+
+kubeinit_registry_container_engine: docker
+#kubeinit_registry_container_engine: podman
+
+kubeinit_registry_user: registryusername
+kubeinit_registry_password: registrypassword
+kubeinit_registry_email: example@domain.com
+# The space after the first single quote is required, do not remove
+# Something in Ansible appears to be recognizing this as valid Python,
+# so it's getting transformed into a Python list and then serialized
+# using Python's str(), which is why we end up with the single-quoted values.
+kubeinit_registry_pullsecret: '  { "auths": {} }'
+
+kubeinit_registry_required_packages_aux: "{% if ( kubeinit_inventory_cluster_distro == 'rke' or kubeinit_inventory_cluster_distro == 'cdk' ) %}
+                                            python3, python3-dns, jq, apache2-utils, skopeo
+                                          {% else %}
+                                            python3, python3-dns, jq, httpd-tools, skopeo
+                                          {% endif %}"
+kubeinit_registry_required_packages: "{{ kubeinit_registry_required_packages_aux.split(',') }}"
+
+kubeinit_registry_directory: /var/kubeinit/local_registry
+kubeinit_registry_directory_auth: "{{ kubeinit_registry_directory }}/auth"
+kubeinit_registry_directory_cert: "{{ kubeinit_registry_directory }}/certs"
+kubeinit_registry_directory_data: "{{ kubeinit_registry_directory }}/data"
+
+kubeinit_registry_port: 5000
+kubeinit_registry_host: "{{ hostvars[ groups['all'] | map('regex_search','^.*service.*$') | select('string') | list | first ].inventory_hostname }}"
+kubeinit_registry_fqdn: "{{ kubeinit_registry_host }}.{{ kubeinit_inventory_cluster_name }}.{{ kubeinit_inventory_cluster_domain }}"
+kubeinit_registry_fqdn_alt: "registry.{{ kubeinit_inventory_cluster_name }}.{{ kubeinit_inventory_cluster_domain }}"
+kubeinit_registry_uri: "{{ kubeinit_registry_fqdn }}:{{ kubeinit_registry_port }}"
+
+kubeinit_registry_auth_file: registry-auths.json
+kubeinit_registry_pod_name: kubeinit-registry
+
+kubeinit_registry_certificate_country: US
+kubeinit_registry_certificate_state: MyState
+kubeinit_registry_certificate_locality: MyCity
+kubeinit_registry_certificate_organization: MyCompany
+kubeinit_registry_certificate_organizational_unit: MyDepartment

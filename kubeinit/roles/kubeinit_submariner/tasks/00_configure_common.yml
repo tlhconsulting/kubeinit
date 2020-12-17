@@ -1,0 +1,179 @@
+---
+# Copyright kubeinit.com
+# All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+- name: "Remove repo file"
+  shell: |
+    set -o pipefail
+    set -e
+    rm -rf submariner-operator
+  args:
+    executable: /bin/bash
+  register: remove_repo_existing
+  changed_when: "remove_repo_existing.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: Get submariner-operator repository content
+  git:
+    repo: https://github.com/submariner-io/submariner-operator
+    dest: ~/submariner-operator
+    force: yes
+    version: master
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: "Get the PR ID"
+  shell: |
+    set -o pipefail
+    set -e
+    echo "{{ kubeinit_submariner_test_pr_url }}" | rev | cut -d'/' -f 1 | rev
+  args:
+    executable: /bin/bash
+  register: get_repo_pr_id
+  changed_when: "get_repo_pr_id.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: configure a variable with the PR ID
+  set_fact:
+    kubeinit_submariner_test_pr_id: '{{ get_repo_pr_id.stdout }}'
+
+- name: "Get submariner code based on a PR or from master"
+  shell: |
+    set -o pipefail
+    set -e
+    echo "Getting repo from: {{ kubeinit_submariner_test_pr_url }}"
+    echo "Getting the ID: {{ kubeinit_submariner_test_pr_id }}"
+
+    cd submariner-operator
+    RE='^[0-9]+$'
+    TEST_PR='{{ kubeinit_submariner_test_pr_id }}'
+
+    if [[ $TEST_PR =~ $RE ]]; then
+        echo "Testing PR: {{ kubeinit_submariner_test_pr_id }}"
+        git fetch origin pull/{{ kubeinit_submariner_test_pr_id }}/head
+        git checkout -b pr FETCH_HEAD
+        git log -n 5 --pretty=oneline
+    else
+        echo "Running from master"
+    fi
+  args:
+    executable: /bin/bash
+  register: get_submariner_operator_code
+  changed_when: "get_submariner_operator_code.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: "Clean previous images"
+  shell: |
+    set -o pipefail
+    set -e
+
+    # Remove the previously created images
+    docker system prune -af;
+  args:
+    executable: /bin/bash
+  register: clean_all_local_images
+  changed_when: "clean_all_local_images.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: "Make clean"
+  make:
+    chdir: ~/submariner-operator
+    target: clean
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: "Make the subctl binary"
+  make:
+    chdir: ~/submariner-operator
+    target: bin/subctl
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+# We need this in both cluster and there are 2 different registries (1 per cluster)
+- name: "Make build"
+  make:
+    chdir: ~/submariner-operator
+    target: build
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+# We need this in both cluster and there are 2 different registries (1 per cluster)
+- name: "Make images"
+  make:
+    chdir: ~/submariner-operator
+    target: images
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+# We need this in both cluster and there are 2 different registries (1 per cluster)
+- name: "Push the image to the local registry"
+  shell: |
+    set -o pipefail
+    set -e
+    LOCAL_REGISTRY=$(cat ~/registry-auths.json | jq .auths | jq -r 'keys[]')
+    cp registry-auths.json ~/config.json
+    docker --config ~/ tag quay.io/submariner/submariner-operator:devel $LOCAL_REGISTRY/submariner/submariner-operator:devel;
+    # --config will search the config.json in ~/
+    docker --config ~/ push $LOCAL_REGISTRY/submariner/submariner-operator:devel;
+  args:
+    executable: /bin/bash
+  register: push_submariner_to_local_registry
+  changed_when: "push_submariner_to_local_registry.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: "Make the subctl binary available"
+  shell: |
+    set -o pipefail
+    set -e
+
+    mkdir -p ~/.local/bin/
+    rm -rf ~/.local/bin/subctl
+    cp ~/submariner-operator/bin/subctl ~/.local/bin/
+  args:
+    executable: /bin/bash
+  register: install_subctl
+  changed_when: "install_subctl.rc == 0"
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: Check if ~/.profile exists
+  stat:
+    path: ~/.profile
+  register: profile_exists
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: Append subctl path to profile
+  lineinfile:
+    line: export PATH=$PATH:~/.local/bin
+    dest: ~/.profile
+  when: profile_exists.stat.exists and (kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool)
+
+- name: Check if ~/.bash_profile exists
+  stat:
+    path: ~/.bash_profile
+  register: bash_profile_exists
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: Append subctl path to bash_profile
+  lineinfile:
+    line: export PATH=$PATH:~/.local/bin
+    dest: ~/.bash_profile
+  when: bash_profile_exists.stat.exists and (kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool)
+
+- name: Check if ~/.bashrc exists
+  stat:
+    path: ~/.bashrc
+  register: bashrc_exists
+  when: kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool
+
+- name: Append subctl path to bashrc
+  lineinfile:
+    line: export PATH=$PATH:~/.local/bin
+    dest: ~/.bashrc
+  when: bashrc_exists.stat.exists and (kubeinit_submariner_is_broker|bool or kubeinit_submariner_is_secondary|bool)

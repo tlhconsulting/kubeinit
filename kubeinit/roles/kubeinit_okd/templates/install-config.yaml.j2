@@ -1,0 +1,41 @@
+apiVersion: v1
+baseDomain: {{ kubeinit_inventory_cluster_domain }}
+compute:
+  - hyperthreading: Enabled
+    name: worker
+    replicas: 0
+controlPlane:
+  hyperthreading: Enabled
+  name: master
+  replicas: {{ groups['okd_master_nodes'] | count }}
+metadata:
+  name: {{ kubeinit_inventory_cluster_name }}
+networking:
+  clusterNetwork:
+    - cidr: {{ kubeinit_okd_pod_cidr }}
+      hostPrefix: 23
+  networkType: OpenShiftSDN
+  serviceNetwork:
+    - {{ kubeinit_okd_service_cidr }}
+platform:
+  none: {}
+fips: false
+{% if kubeinit_registry_enabled is defined and kubeinit_registry_enabled %}
+pullSecret: '{{ kubeinit_registry_pullsecret | to_json }}'
+{% else %}
+pullSecret: '{{ kubeinit_okd_registry_pullsecret }}'
+{% endif %}
+sshKey: |
+  {{ kubeinit_provision_vms_public_key }}
+  {{ kubeinit_provision_service_public_key[0]['stdout'] }}
+{% if kubeinit_registry_enabled is defined and kubeinit_registry_enabled %}
+additionalTrustBundle: |
+  {{ trustbundle | regex_replace('\n', '\n  ') }}
+imageContentSources:
+- mirrors:
+  - {{ kubeinit_registry_uri }}/okd
+  source: quay.io/openshift/okd
+- mirrors:
+  - {{ kubeinit_registry_uri }}/okd
+  source: quay.io/openshift/okd-content
+{% endif %}
